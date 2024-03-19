@@ -199,18 +199,20 @@ def generate_ship(field: list, ship_settings: dict):
             y_cord = y + cells - 1 if orientation else y
             x_cord = x + cells - 1 if orientation else x
 
-            if is_head:
-                key = f"{x_cord}{y_cord}"
-                is_head = False
+def toggle_is_head(is_head:bool, x_cord:int, y_cord:int):
+    if is_head:
+        key = f"{x_cord}{y_cord}"
+        is_head = False
 
-            if y > 0 and x > 0 and (y_cord > 0 and y_cord < len(field)) and (x_cord > 0 and x_cord < len(field)) and not(field[y_cord][x_cord]):
-                for j in range(cells):
-                    if orientation:
-                        field[y][x + j] = cells
-                    else:
-                        print(x, y)
-                        field[y + j][x] = cells
-                break
+def add_ship_on_field(field:list, x_cord:int, y_cord:int, cells:list, orientation:bool, x:int, y:int):
+    if (y_cord > 0 and y_cord <= 10) and (x_cord > 0 and x_cord <= 10):
+        for j in range(cells):
+            if orientation:
+                field[y][x + j] = cells
+            else:
+                print(x, y)
+                field[y + j][x] = cells
+        break
 
 def shoot_coords_user(field: list, field_user: list, total_score: int, user_score: int):
     """
@@ -228,7 +230,7 @@ def shoot_coords_user(field: list, field_user: list, total_score: int, user_scor
         if letter == "":
             continue
         del(command[0])
-        number = ''.join(set(command))
+        number = int(''.join(set(command)))
         letter_index = LETTERS.index(letter)
         point_cords = get_ship_cords([letter_index, number], 0, 1)[0]
         x = int(point_cords[0])
