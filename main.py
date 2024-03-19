@@ -245,7 +245,7 @@ def shoot_coords_user(field: list, field_user: list, total_score: int, user_scor
                 print("Вы сюда уже стреляли!")
         else:
             print("Вы промазали!")
-            break
+            continue
     return True
 
 def get_available_coords_shoot(field: list, cell_coords: list, go_up: bool):
@@ -341,7 +341,7 @@ def shoot_coords_computer(field: list, total_score: int, computer_score: int, hi
                         print("К сожалению, Вы проиграли!")
                         return False
             else:
-                coord_print = letter + point_cords[1]
+                coord_print = letter + str(point_cords[1])
                 print(f"Противник промазал: {coord_print}")
                 field[point_cords[1]][point_cords[0]] = 'O'
                 break
@@ -362,12 +362,12 @@ def init():
     field_user = generate_field()
     for index, ship_conf in CONFIG_SHIPS.items():
         generate_ship(field, ship_conf)
-        #generate_ship(field_user, ship_conf)
+        generate_ship(field_user, ship_conf)
         print_field(field)
         total_score += ship_conf['cells'] * ship_conf['amount']
 
-    print_field(field_user)
     # set_user_field(field_user)
+    print_field(field_user)
     is_user_move = bool(random.randint(0, 1))
     if is_user_move:
         print("Первым стреляете Вы\n")
