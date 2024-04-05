@@ -124,6 +124,12 @@ def check_surrounding(field: list, cell_1: list, orientation: bool, type: int):
     :param type:
     :return:
     """
+
+    '''
+    0 0 0
+    . X 0
+    0 0 0
+    '''
     cell_0 = [cell_1[0] - 1, cell_1[1] - 1]
     rows_counter = 3 if orientation else 2 + type
     cols_counter = 2 + type if orientation else 3
@@ -140,8 +146,9 @@ def check_surrounding(field: list, cell_1: list, orientation: bool, type: int):
             if current_cell in ship_cords:
                 continue
             if field[y][x] != 0:
-
                 return False
+    if x <= 0 or y <= 0 or y > 10 or x > 10:
+        return False
     return True
 
 def get_ship_cords(head: list, orientation: bool, type: int):
@@ -203,12 +210,15 @@ def generate_ship(field: list, ship_settings: dict):
                 key = f"{x_cord}{y_cord}"
                 is_head = False
 
-            if (y_cord > 0 and y_cord <= 10) and (x_cord > 0 and x_cord <= 10):
+            if (y_cord > 1 and y_cord <= 10) and (x_cord > 1 and x_cord <= 10) and field[y_cord][x_cord] == 0:
                 for j in range(cells):
                     if orientation:
+                        print(field[y][x + j])
+                        print(field[y][x])
                         field[y][x + j] = cells
                     else:
-                        print(x, y)
+                        print(field[y + j][x])
+                        print(field[y][x])
                         field[y + j][x] = cells
                 break
 

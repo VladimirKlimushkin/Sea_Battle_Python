@@ -107,13 +107,15 @@ def set_user_field(field: list):
                 [x, y] = get_empty_position(field)
                 orientation = bool(random.randint(0, 1))  # 0 - вертикальная ориентация, 1 - горизонтальная
             if field[y][x] == 0:
-                for j in range(cells):
-                    if orientation:
-                        field[y][x + j] = cells
-                    else:
-                        field[y + j][x] = cells
+                stand_ship_point_on_field(cells, orientation, field, x, y)
                 print_field(field)
 
+def stand_ship_point_on_field(cells: list, orientation: bool, field: list, x: int, y: int):
+    for j in range(cells):
+        if orientation:
+            field[y][x + j] = cells
+        else:
+            field[y + j][x] = cells
 
 def check_surrounding(field: list, cell_1: list, orientation: bool, type: int):
     """
@@ -186,6 +188,7 @@ def generate_ship(field: list, ship_settings: dict):
     """
     amount = ship_settings['amount']
     cells = ship_settings['cells']
+    print(cells)
     for i in range(amount):
         is_head = True
         key = ''
@@ -199,21 +202,30 @@ def generate_ship(field: list, ship_settings: dict):
             y_cord = y + cells - 1 if orientation else y
             x_cord = x + cells - 1 if orientation else x
 
+            key, is_head = toggle_is_head(is_head, x_cord, y_cord)
+
+            is_in_if = add_ship_on_field(field, x_cord, y_cord, cells, orientation, x, y)
+            if is_in_if:
+                break
+
 def toggle_is_head(is_head:bool, x_cord:int, y_cord:int):
+    key = ""
     if is_head:
         key = f"{x_cord}{y_cord}"
         is_head = False
+    return [key, is_head]
 
-def add_ship_on_field(field:list, x_cord:int, y_cord:int, cells:list, orientation:bool, x:int, y:int):
-    if (y_cord > 0 and y_cord <= 10) and (x_cord > 0 and x_cord <= 10):
+
+def add_ship_on_field(field: list, x_cord: int, y_cord: int, cells, orientation: bool, x: int, y: int):
+    is_in_if = False
+    if (not(orientation) and (y_cord > 0 and y_cord <= 11-cells) and (x_cord > 0 and x_cord <= 10)) or (orientation and (y_cord > 0 and y_cord <= 10) and (x_cord > 0 and x_cord <= 11-cells)):
+        is_in_if = True
         for j in range(cells):
             if orientation:
                 field[y][x + j] = cells
             else:
-                print(x, y)
                 field[y + j][x] = cells
-        break
-
+    return is_in_if
 def shoot_coords_user(field: list, field_user: list, total_score: int, user_score: int):
     """
     Спрашивает координату выстрела юзера
@@ -236,21 +248,25 @@ def shoot_coords_user(field: list, field_user: list, total_score: int, user_scor
         x = int(point_cords[0])
         y = int(point_cords[1])
         if field[y][x] != 0:
-            if field[y][x] != "X":
-                print("Вы попали!")
-                field[y][x] = "X"
-                user_score += 1
-                if total_score == user_score:
-                    print("Поздравляем! Вы победили!")
-                    return False
-            else:
-                print("Вы сюда уже стреляли!")
+            if not(check_ship_hit_user(y, x, field, user_score, total_score)):
+                return False
         else:
             print("Вы промазали!")
-            continue
+            break
     return True
 
-def get_available_coords_shoot(field: list, cell_coords: list, go_up: bool):
+def check_ship_hit_user(y, x, field, user_score, total_score):
+    if field[y][x] != "X":
+        print("Вы попали!")
+        field[y][x] = "X"
+        user_score += 1
+        if total_score == user_score:
+            print("Поздравляем! Вы победили!")
+            return False
+    else:
+        print("Вы сюда уже стреляли!")
+    return True
+def get_available_coords_shoot(field: list, cell_coords: list, go_up=False):
     """
     Возвращает массив координат, доступных для выстрела
     :param field:
@@ -258,7 +274,7 @@ def get_available_coords_shoot(field: list, cell_coords: list, go_up: bool):
     :param go_up:
     :return:
     """
-    last_shot = cell_coords[-1:] if not(go_up) else cell_coords[0]
+    last_shot = cell_coords[-1] if not(go_up) else cell_coords[0]
     cell_0 = [last_shot[0]-1, last_shot[1]-1]
     hit_points = []
 
@@ -330,7 +346,7 @@ def shoot_coords_computer(field: list, total_score: int, computer_score: int, hi
             hit_coord = field[point_cords[1]][point_cords[0]]
             if hit_coord != 0:
                 if hit_coord not in ['X', 'O']:
-                    coord_print = letter+point_cords[1]
+                    coord_print = letter+str(point_cords[1])
                     print(f"Противник попал: {coord_print}")
                     hit_coords_computer.append(point_cords)
                     ship_type = int(field[point_cords[1]][point_cords[0]])
@@ -348,6 +364,8 @@ def shoot_coords_computer(field: list, total_score: int, computer_score: int, hi
                 field[point_cords[1]][point_cords[0]] = 'O'
                 break
     return True
+
+
 
 def init():
     """
@@ -378,8 +396,7 @@ def init():
 
     game = True
     while game:
-        game = is_user_move and shoot_coords_user(field, field_user, total_score, user_score)
-        game = not is_user_move and shoot_coords_computer(field_user, total_score, computer_score, hit_coords_computer)
-        is_user_move = not is_user_move
+        game = shoot_coords_user(field, field_user, total_score, user_score) if is_user_move else shoot_coords_computer(field_user, total_score, computer_score, hit_coords_computer)
+        is_user_move = not(is_user_move)
 
 init()
