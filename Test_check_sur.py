@@ -49,9 +49,9 @@ field = generate_field()
 
 counter_errors = 0
 
-for i in range(0, 10):
-    for j in range(0, 10):
-        if not add_ship_on_field(field, i, j, 2, False, i+1, j):
+for i in range(0, 12):
+    for j in range(0, 12):
+        if not add_ship_on_field(field, i, j, 4, True, i, j):
             counter_errors += 1
 
 print_field(field)

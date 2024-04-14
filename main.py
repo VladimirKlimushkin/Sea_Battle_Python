@@ -168,13 +168,13 @@ def get_empty_position(field: list):
     :return:
     """
     field_new = field[1:]
-    y = random.randrange(len(field_new)-1)
-    x = random.randrange(len(field_new[y])-1)
+    y = random.randrange(1, 10)
+    x = random.randrange(1, 10)
     col_value = field_new[y][x]
     if col_value != 0:
         while col_value != 0:
-            y = random.randrange(len(field_new)-1)
-            x = random.randrange(len(field_new[y])-1)
+            y = random.randrange(1, 10)
+            x = random.randrange(1, 10)
             col_value = field_new[y][x]
     return [x, y]
 
@@ -188,7 +188,6 @@ def generate_ship(field: list, ship_settings: dict):
     """
     amount = ship_settings['amount']
     cells = ship_settings['cells']
-    print(cells)
     for i in range(amount):
         is_head = True
         key = ''
@@ -203,7 +202,6 @@ def generate_ship(field: list, ship_settings: dict):
             x_cord = x + cells - 1 if orientation else x
 
             key, is_head = toggle_is_head(is_head, x_cord, y_cord)
-
             is_in_if = add_ship_on_field(field, x_cord, y_cord, cells, orientation, x, y)
             if is_in_if:
                 break
@@ -277,10 +275,10 @@ def get_available_coords_shoot(field: list, cell_coords: list, go_up=False):
     last_shot = cell_coords[-1] if not(go_up) else cell_coords[0]
     cell_0 = [last_shot[0]-1, last_shot[1]-1]
     hit_points = []
-
-    for i in range(3):
+    range_list = range(3)
+    for i in range_list:
         y = cell_0[1] + i
-        for j in range(3):
+        for j in range_list:
             x = cell_0[0] + j
             current_cell = [x, y]
 
@@ -295,11 +293,12 @@ def get_available_coords_shoot(field: list, cell_coords: list, go_up=False):
                 continue
             hit_points.append(current_cell)
     for coords in cell_coords:
-        key = hit_points.index(coords)
-        if key != False:
+        if coords in hit_points:
+            key = hit_points.index(coords)
             del(hit_points[key])
-    if not(hit_points and not(go_up)):
+    if not(go_up):
         hit_points = get_available_coords_shoot(field, cell_coords, True)
+        print(hit_points)
     return hit_points
 
 def shoot_coords_computer(field: list, total_score: int, computer_score: int, hit_coords_computer: list):
@@ -314,14 +313,15 @@ def shoot_coords_computer(field: list, total_score: int, computer_score: int, hi
     while True:
         if len(hit_coords_computer) > 0:
             hit_points = get_available_coords_shoot(field, hit_coords_computer)
-            random_shoot_key = random.randrange(hit_points)
-            random_shoot = hit_points(random_shoot_key)
+            random_shoot_key = hit_points.index(random.choice(hit_points))
+            print(random_shoot_key)
+            random_shoot = hit_points[random_shoot_key]
             letter = LETTERS[random_shoot[0]]
             hit_coord = field[random_shoot[1]][random_shoot[0]]
 
             if hit_coord != 0:
                 if hit_coord not in ['X', 'O']:
-                    coord_print = letter+random_shoot[1]
+                    coord_print = letter+str(random_shoot[1])
                     print(f"Противник попал: {coord_print}")
                     hit_coords_computer.append(random_shoot)
                     ship_type = int(field[random_shoot[1]][random_shoot[0]])
@@ -334,7 +334,7 @@ def shoot_coords_computer(field: list, total_score: int, computer_score: int, hi
                         print("К сожалению, Вы проиграли!")
                         return False
             else:
-                coord_print = letter + random_shoot[1]
+                coord_print = letter + str(random_shoot[1])
                 print(f"Противник промазал: {coord_print}")
                 field[random_shoot[1]][random_shoot[0]] = 'O'
                 break
@@ -372,31 +372,32 @@ def init():
     Инициация программы
     :return:
     """
-    user_score = 0
-    computer_score = 0
-    total_score = 0
+    user_score = 0 # Счёт игрока, увеличивается при подбитии
+    computer_score = 0 # Счёт компьютера, увеличивается при подбитии
+    total_score = 0 # Тотальный счёт, по которому проверяем конец игры
 
-    hit_coords_computer = []
+    hit_coords_computer = [] # Координаты всех сделанных компьютером попаданий
+    hit_coords_user = []
 
     field = generate_field()
     field_user = generate_field()
     for index, ship_conf in CONFIG_SHIPS.items():
         generate_ship(field, ship_conf)
         generate_ship(field_user, ship_conf)
-        print_field(field)
         total_score += ship_conf['cells'] * ship_conf['amount']
 
     # set_user_field(field_user)
-    print_field(field_user)
-    is_user_move = bool(random.randint(0, 1))
+    is_user_move = bool(random.randint(0, 1)) # ходит ли пользователь первым
     if is_user_move:
         print("Первым стреляете Вы\n")
     else:
         print("Первым стреляет противник\n")
 
-    game = True
+    game = True # идёт ли игра
     while game:
-        game = shoot_coords_user(field, field_user, total_score, user_score) if is_user_move else shoot_coords_computer(field_user, total_score, computer_score, hit_coords_computer)
-        is_user_move = not(is_user_move)
+        # game = shoot_coords_user(field, field_user, total_score, user_score) if is_user_move else shoot_coords_computer(field_user, total_score, computer_score, hit_coords_computer)
+        print(is_user_move)
+        game = shoot_coords_computer(field, total_score, user_score, hit_coords_user) if is_user_move else shoot_coords_computer(field_user, total_score, computer_score, hit_coords_computer) # Ходы пользователя и компьютера
+        is_user_move = not(is_user_move) # смена ходов
 
 init()
