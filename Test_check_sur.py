@@ -34,26 +34,52 @@ def print_field(field: list):
                 print(point_str + ' | ', end="")
         print(f"\n   "+"-"*41)
 
-def add_ship_on_field(field: list, x_cord: int, y_cord: int, cells, orientation: bool, x: int, y: int):
-    is_in_if = False
-    if (not(orientation) and (y_cord > 0 and y_cord <= 11-cells) and (x_cord > 0 and x_cord <= 10)) or (orientation and (y_cord > 0 and y_cord <= 10) and (x_cord > 0 and x_cord <= 11-cells)):
-        is_in_if = True
-        for j in range(cells):
-            if orientation:
-                field[y][x + j] = cells
-            else:
-                field[y + j][x] = cells
-    return is_in_if
+def get_available_coords_shoot(field: list, cell_coords: list, go_up=False):
+    """
+    Возвращает массив координат, доступных для выстрела
+    :param field:
+    :param cell_coords:
+    :param go_up:
+    :return:
+    """
+    last_shot = cell_coords[-1] if not(go_up) else cell_coords[0]
+    cell_0 = [last_shot[0]-1, last_shot[1]-1]
+    hit_points = []
+    range_list = range(3)
+    for i in range_list:
+        y = cell_0[1] + i
+        for j in range_list:
+            x = cell_0[0] + j
+            current_cell = [x, y]
+
+            # Проверяет на выход за пределы карты
+            if y > len(field) or x > len(field[y]) or x == 0 or y == 0:
+                continue
+            # Проверка на диагонали
+            if (i == 0 and j == 0) or (i == 0 and j == 2) or (i == 2 and j == 0) or (i == 2 and j == 2):
+                continue
+            # Проверка на пустоту ячейки
+            if field[y][x] == 'O' or field[y][x] == 'X':
+                continue
+            hit_points.append(current_cell)
+    for coords in cell_coords:
+        if coords in hit_points:
+            key = hit_points.index(coords)
+            del(hit_points[key])
+    if not(go_up) and hit_points == []:
+        hit_points = get_available_coords_shoot(field, cell_coords, True)
+        print("", hit_points)
+    return hit_points
 
 field = generate_field()
 
-counter_errors = 0
-
-for i in range(0, 12):
-    for j in range(0, 12):
-        if not add_ship_on_field(field, i, j, 4, True, i, j):
-            counter_errors += 1
-
-print_field(field)
-
-print(counter_errors)
+hit_points = get_available_coords_shoot(field, [[5, 3]])
+print(hit_points)
+hit_points = get_available_coords_shoot(field, [[5, 3], [5, 2]])
+print(hit_points)
+hit_points = get_available_coords_shoot(field, [[5, 3], [5, 2], [5, 1]])
+print(hit_points)
+hit_points = get_available_coords_shoot(field, [[5, 3], [5, 2], [4, 1], [6, 1], [5, 1]])
+print(hit_points)
+hit_points = get_available_coords_shoot(field, [[5, 3], [5, 2], [4, 1], [4, 3], [6, 3], [6, 1], [5, 1]])
+print(hit_points)

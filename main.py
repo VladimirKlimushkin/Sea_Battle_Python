@@ -296,9 +296,12 @@ def get_available_coords_shoot(field: list, cell_coords: list, go_up=False):
         if coords in hit_points:
             key = hit_points.index(coords)
             del(hit_points[key])
-    if not(go_up):
+    print(hit_points)
+    if not(go_up) and hit_points == []:
+        print("recurs,", cell_coords)
         hit_points = get_available_coords_shoot(field, cell_coords, True)
-        print(hit_points)
+        print("recurs,", hit_points)
+        print_field(field)
     return hit_points
 
 def shoot_coords_computer(field: list, total_score: int, computer_score: int, hit_coords_computer: list):
@@ -314,11 +317,9 @@ def shoot_coords_computer(field: list, total_score: int, computer_score: int, hi
         if len(hit_coords_computer) > 0:
             hit_points = get_available_coords_shoot(field, hit_coords_computer)
             random_shoot_key = hit_points.index(random.choice(hit_points))
-            print(random_shoot_key)
             random_shoot = hit_points[random_shoot_key]
             letter = LETTERS[random_shoot[0]]
             hit_coord = field[random_shoot[1]][random_shoot[0]]
-
             if hit_coord != 0:
                 if hit_coord not in ['X', 'O']:
                     coord_print = letter+str(random_shoot[1])
@@ -327,6 +328,7 @@ def shoot_coords_computer(field: list, total_score: int, computer_score: int, hi
                     ship_type = int(field[random_shoot[1]][random_shoot[0]])
                     field[random_shoot[1]][random_shoot[0]] = 'X'
                     if len(hit_coords_computer) == ship_type:
+                        print(hit_points)
                         print("Корабль уничтожен!")
                         hit_coords_computer = []
                         continue
