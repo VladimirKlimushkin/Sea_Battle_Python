@@ -7,7 +7,11 @@ CONFIG_SHIPS = {
     'type_4': {'cells': 4, 'amount': 1}
 }
 LETTERS = (' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J')
+HIT = 'X'
+MISSED = '-'
 
+hit_coords_computer = []  # Координаты всех сделанных компьютером попаданий
+hit_coords_user = [] # Координаты всех сделанных пользователем попаданий
 
 def generate_field() -> list:
     """
@@ -251,9 +255,9 @@ def shoot_coords_user(field: list, field_user: list, total_score: int, user_scor
 
 
 def check_ship_hit_user(y, x, field, user_score, total_score):
-    if field[y][x] != "X":
+    if field[y][x] != HIT:
         print("Вы попали!")
-        field[y][x] = "X"
+        field[y][x] = HIT
         user_score += 1
         if total_score == user_score:
             print("Поздравляем! Вы победили!")
@@ -288,42 +292,46 @@ def get_available_coords_shoot(field: list, cell_coords: list, go_up=False):
             if (i == 0 and j == 0) or (i == 0 and j == 2) or (i == 2 and j == 0) or (i == 2 and j == 2):
                 continue
             # Проверка на пустоту ячейки
-            if field[y][x] == 'O' or field[y][x] == 'X':
+            if field[y][x] == MISSED or field[y][x] == HIT:
                 continue
             hit_points.append(current_cell)
     for coords in cell_coords:
         if coords in hit_points:
             key = hit_points.index(coords)
             del (hit_points[key])
-    print(hit_points)
+
     if not (go_up) and hit_points == []:
         hit_points = get_available_coords_shoot(field, cell_coords, True)
         print_field(field)
     return hit_points
 
 
-def shoot_coords_computer(field: list, total_score: int, computer_score: int, hit_coords_computer: list):
+def shoot_coords_computer(field: list, total_score: int, computer_score: int, is_user: bool):
     """
     Спрашивает координату выстрела компьютера
+    :param is_user:
     :param field:
     :param total_score:
     :param computer_score:
-    :param hit_coords_computer:
     :return:
     """
 
-    print('------')
-    print('hit_coords_computer main', hit_coords_computer)
-    print('------')
+    global hit_coords_computer
+    global hit_coords_user
+
+    if is_user is True:
+        coords_list = hit_coords_user
+    else:
+        coords_list = hit_coords_computer
 
     while True:
-        if len(hit_coords_computer) > 0:
-            hit_points = get_available_coords_shoot(field, hit_coords_computer)
 
-            print('------')
-            print('hit_coords_computer', hit_coords_computer)
-            print('------')
+        if total_score == computer_score:
+            print("Вы победили!")
+            return False
 
+        if len(coords_list) > 0:
+            hit_points = get_available_coords_shoot(field, coords_list)
             random_shoot_key = hit_points.index(random.choice(hit_points))
             random_shoot = hit_points[random_shoot_key]
             letter = LETTERS[random_shoot[0]]
@@ -332,43 +340,41 @@ def shoot_coords_computer(field: list, total_score: int, computer_score: int, hi
 
             if type(coord_value) == int and coord_value >= 1:
                 print(f"Противник попал: {coord_print}")
-                hit_coords_computer.append(random_shoot)
+                coords_list.append(random_shoot)
                 ship_type = int(field[random_shoot[1]][random_shoot[0]])
-                field[random_shoot[1]][random_shoot[0]] = 'X'
-                print('ship_type: ', ship_type)
+                field[random_shoot[1]][random_shoot[0]] = HIT
 
-                if len(hit_coords_computer) == ship_type:
+                if len(coords_list) == ship_type:
                     print("Корабль уничтожен!")
-                    hit_coords_computer = []
+                    coords_list.clear()
                     continue
-
-                if total_score == computer_score:
-                    print("Вы победили!")
-                    return False
             else:
                 coord_print = letter + str(random_shoot[1])
                 print(f"Противник промазал: {coord_print}")
-                field[random_shoot[1]][random_shoot[0]] = 'O'
+                field[random_shoot[1]][random_shoot[0]] = MISSED
                 break
         else:
             y = random.randint(1, 10)
             x = random.randint(1, 10)
             letter = LETTERS[x]
 
-            # [(1,2), (1,3)...]
             ship_cords = get_ship_cords((x, y), 0, 1)[0]
             coord_value = field[ship_cords[1]][ship_cords[0]]
             coord_print = letter + str(ship_cords[1])
 
+            if total_score == computer_score:
+                print("Вы победили!")
+                return False
+
             if type(coord_value) == int and coord_value >= 1:
                 print(f"Противник попал: {coord_print}")
-                hit_coords_computer.append(ship_cords)
+                coords_list.append(ship_cords)
                 ship_type = int(field[ship_cords[1]][ship_cords[0]])
-                field[ship_cords[1]][ship_cords[0]] = "X"
+                field[ship_cords[1]][ship_cords[0]] = HIT
 
-                if len(hit_coords_computer) == ship_type:
+                if len(coords_list) == ship_type:
                     print("Корабль уничтожен!")
-                    hit_coords_computer = []
+                    coords_list.clear()
                     continue
 
                 if total_score == computer_score:
@@ -377,7 +383,7 @@ def shoot_coords_computer(field: list, total_score: int, computer_score: int, hi
 
             else:
                 print(f"Противник промазал: {coord_print}")
-                field[ship_cords[1]][ship_cords[0]] = 'O'
+                field[ship_cords[1]][ship_cords[0]] = MISSED
                 break
     return True
 
@@ -390,9 +396,6 @@ def init():
     user_score = 0  # Счёт игрока, увеличивается при подбитии
     computer_score = 0  # Счёт компьютера, увеличивается при подбитии
     total_score = 0  # Тотальный счёт, по которому проверяем конец игры
-
-    hit_coords_computer = []  # Координаты всех сделанных компьютером попаданий
-    hit_coords_user = []
 
     field_computer = generate_field()
     field_user = generate_field()
@@ -413,9 +416,9 @@ def init():
         # game = shoot_coords_user(field, field_user, total_score, user_score) if is_user_move else shoot_coords_computer(field_user, total_score, computer_score, hit_coords_computer)
 
         if is_user_move:
-            game = shoot_coords_computer(field_user, total_score, user_score, hit_coords_user)
+            game = shoot_coords_computer(field_user, total_score, user_score, is_user_move)
         else:  # Ходы пользователя и компьютера
-            game = shoot_coords_computer(field_computer, total_score, computer_score, hit_coords_computer)
+            game = shoot_coords_computer(field_computer, total_score, computer_score, is_user_move)
 
         is_user_move = not (is_user_move)  # смена ходов
 
