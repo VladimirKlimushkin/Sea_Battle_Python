@@ -11,7 +11,16 @@ HIT = 'X'
 MISSED = '-'
 
 hit_coords_computer = []  # Координаты всех сделанных компьютером попаданий
-hit_coords_user = [] # Координаты всех сделанных пользователем попаданий
+hit_coords_user = []  # Координаты всех сделанных пользователем попаданий
+user_score = 0  # Счёт игрока, увеличивается при подбитии
+computer_score = 0  # Счёт компьютера, увеличивается при подбитии
+
+
+class UnplacedShipError(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+
 
 def generate_field() -> list:
     """
@@ -114,7 +123,6 @@ def set_user_field(field: list):
                 orientation = bool(random.randint(0, 1))  # 0 - вертикальная ориентация, 1 - горизонтальная
             if field[y][x] == 0:
                 stand_ship_point_on_field(cells, orientation, field, x, y)
-                print_field(field)
 
 
 def stand_ship_point_on_field(cells: list, orientation: bool, field: list, x: int, y: int):
@@ -206,11 +214,19 @@ def generate_ship(field: list, ship_settings: dict):
         orientation = bool(random.randint(0, 1))
         [x, y] = get_empty_position(field)
 
+        counter = 0
+
         while not check_surrounding(field, (x, y), orientation, cells):
+            if counter == 100:
+                raise UnplacedShipError('Не смогли разместить кораблик.')
+
             [x, y] = get_empty_position(field)
             orientation = bool(random.randint(0, 1))  # 0 - вертикальная ориентация, 1 - горизонтальная
+            counter += 1
 
         add_ship_on_field(field, [x, y], cells, orientation)
+
+    return False
 
 
 def add_ship_on_field(field: list, coords_head: list, cells: int, orientation: bool):
@@ -224,7 +240,7 @@ def add_ship_on_field(field: list, coords_head: list, cells: int, orientation: b
             field[y + j][x] = cells
 
 
-def shoot_coords_user(field: list, field_user: list, total_score: int, user_score: int):
+def shoot_coords_user(field: list, field_user: list, total_score: int):
     """
     Спрашивает координату выстрела юзера
     :param field:
@@ -302,11 +318,11 @@ def get_available_coords_shoot(field: list, cell_coords: list, go_up=False):
 
     if not (go_up) and hit_points == []:
         hit_points = get_available_coords_shoot(field, cell_coords, True)
-        print_field(field)
+
     return hit_points
 
 
-def shoot_coords_computer(field: list, total_score: int, computer_score: int, is_user: bool):
+def shoot_coords_computer(field: list, total_score: int, is_user: bool):
     """
     Спрашивает координату выстрела компьютера
     :param is_user:
@@ -318,16 +334,43 @@ def shoot_coords_computer(field: list, total_score: int, computer_score: int, is
 
     global hit_coords_computer
     global hit_coords_user
+    global user_score
+    global computer_score
 
     if is_user is True:
         coords_list = hit_coords_user
+        score = user_score
     else:
         coords_list = hit_coords_computer
+        score = computer_score
+
+    def winning_message(is_user):
+        if is_user:
+            print("Пользователь победил!")
+        else:
+            print("Компуктер победил!")
+
+    def missing_message(is_user, coord):
+        if is_user:
+            print(f"Пользователь промазал: {coord}!")
+        else:
+            print(f"Компуктер промазал: {coord}!")
+
+    def hit_message(is_user, coord):
+        if is_user:
+            print(f"Пользователь попал: {coord}!")
+        else:
+            print(f"Компуктер попал: {coord}!")
+
+    def ship_sink_message(is_user):
+        if is_user:
+            print("Корабль компуктера уничтожен!")
+        else:
+            print("Корабль пользователя уничтожен!")
 
     while True:
-
-        if total_score == computer_score:
-            print("Вы победили!")
+        if total_score == score:
+            winning_message(is_user)
             return False
 
         if len(coords_list) > 0:
@@ -339,18 +382,19 @@ def shoot_coords_computer(field: list, total_score: int, computer_score: int, is
             coord_print = letter + str(random_shoot[1])
 
             if type(coord_value) == int and coord_value >= 1:
-                print(f"Противник попал: {coord_print}")
+                hit_message(is_user, coord_print)
                 coords_list.append(random_shoot)
                 ship_type = int(field[random_shoot[1]][random_shoot[0]])
                 field[random_shoot[1]][random_shoot[0]] = HIT
+                score += 1
 
                 if len(coords_list) == ship_type:
-                    print("Корабль уничтожен!")
+                    ship_sink_message(is_user)
                     coords_list.clear()
                     continue
             else:
                 coord_print = letter + str(random_shoot[1])
-                print(f"Противник промазал: {coord_print}")
+                missing_message(is_user, coord_print)
                 field[random_shoot[1]][random_shoot[0]] = MISSED
                 break
         else:
@@ -362,29 +406,38 @@ def shoot_coords_computer(field: list, total_score: int, computer_score: int, is
             coord_value = field[ship_cords[1]][ship_cords[0]]
             coord_print = letter + str(ship_cords[1])
 
-            if total_score == computer_score:
-                print("Вы победили!")
+            if total_score == score:
+                winning_message(is_user)
                 return False
 
             if type(coord_value) == int and coord_value >= 1:
-                print(f"Противник попал: {coord_print}")
+                hit_message(is_user, coord_print)
                 coords_list.append(ship_cords)
                 ship_type = int(field[ship_cords[1]][ship_cords[0]])
                 field[ship_cords[1]][ship_cords[0]] = HIT
+                score += 1
 
                 if len(coords_list) == ship_type:
-                    print("Корабль уничтожен!")
+                    ship_sink_message(is_user)
                     coords_list.clear()
                     continue
 
-                if total_score == computer_score:
+                if total_score == score:
                     print("К сожалению, Вы проиграли!")
                     return False
 
             else:
-                print(f"Противник промазал: {coord_print}")
+                missing_message(is_user, coord_print)
                 field[ship_cords[1]][ship_cords[0]] = MISSED
                 break
+
+    if is_user is True:
+        hit_coords_user = coords_list
+        user_score = score
+    else:
+        hit_coords_computer = coords_list
+        computer_score  = score
+
     return True
 
 
@@ -393,16 +446,42 @@ def init():
     Инициация программы
     :return:
     """
-    user_score = 0  # Счёт игрока, увеличивается при подбитии
-    computer_score = 0  # Счёт компьютера, увеличивается при подбитии
-    total_score = 0  # Тотальный счёт, по которому проверяем конец игры
 
-    field_computer = generate_field()
-    field_user = generate_field()
-    for index, ship_conf in CONFIG_SHIPS.items():
-        generate_ship(field_computer, ship_conf)
-        generate_ship(field_user, ship_conf)
-        total_score += ship_conf['cells'] * ship_conf['amount']
+
+    attempts = 0
+    max_attempts = 10
+    successes = False
+
+    total_score = 0
+    field_computer = None
+    field_user = None
+
+    def generate_fields():
+        # Тотальный счёт, по которому проверяем конец игры
+        total_score = 0
+        field_computer = generate_field()
+        field_user = generate_field()
+        for index, ship_conf in CONFIG_SHIPS.items():
+            generate_ship(field_computer, ship_conf)
+            set_user_field(field_user)
+            total_score += ship_conf['cells'] * ship_conf['amount']
+
+        return total_score, field_computer, field_user
+
+    while attempts < max_attempts and not successes:
+        try:
+            total_score, field_computer, field_user = generate_fields()
+            successes = True
+        except IndexError:
+            print(f"Attempts: {attempts}, Index error")
+            attempts += 1
+        except UnplacedShipError as e:
+            print(f"Attempts: {attempts}, {e.message}")
+            attempts += 1
+
+    if not successes:
+        print('Хьюстон у нас проблемы!')
+        return
 
     # set_user_field(field_user)
     is_user_move = bool(random.randint(0, 1))  # ходит ли пользователь первым
@@ -412,15 +491,26 @@ def init():
         print("Первым стреляет противник\n")
 
     game = True  # идёт ли игра
+    counter = 0
+
+    global user_score
+    global computer_score
+
     while game:
+        if counter == 500:
+            print('выходим')
+            break
+
         # game = shoot_coords_user(field, field_user, total_score, user_score) if is_user_move else shoot_coords_computer(field_user, total_score, computer_score, hit_coords_computer)
 
         if is_user_move:
-            game = shoot_coords_computer(field_user, total_score, user_score, is_user_move)
+            game = shoot_coords_user(field_user, total_score, is_user_move)
         else:  # Ходы пользователя и компьютера
-            game = shoot_coords_computer(field_computer, total_score, computer_score, is_user_move)
+            game = shoot_coords_computer(field_computer, total_score, is_user_move)
 
         is_user_move = not (is_user_move)  # смена ходов
+
+        counter += 1
 
 
 init()
